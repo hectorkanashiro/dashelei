@@ -604,8 +604,16 @@ function renderDetail(arquivo){
     <div class="sec-tab ${activeSection==='resultados'?'on':''}" onclick="switchSection('resultados',this)">Resultados <span style="color:var(--acc3);font-size:9px">(${res.length})</span></div>
     <div class="sec-tab ${activeSection==='opiniao'?'on':''}" onclick="switchSection('opiniao',this)">Opinião Pública <span style="color:var(--acc5);font-size:9px">(${op.length})</span></div>
   </div>`:'';
-  document.getElementById('content').innerHTML=`<div class="detail">
+  document.getElementById('content').innerHTML=`
+    <div class="mobile-bar" id="mobile-topbar">
+      <button class="btn-drawer" onclick="openDrawer()">☰ Ver pesquisas</button>
+      <span class="mobile-bar-title" id="mobile-title">${p.instituto} · ${p.abrangencia}</span>
+    </div>
+    <div class="detail">
     <div class="det-hd">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <button onclick="openDrawer()" style="background:var(--s2);border:1px solid var(--brd);color:var(--muted2);padding:5px 12px;border-radius:4px;font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all .15s" onmouseover="this.style.borderColor='var(--acc)'" onmouseout="this.style.borderColor='var(--brd)'">← Pesquisas</button>
+      </div>
       <div class="det-inst">${p.instituto}</div>
       <div class="det-tema">${p.tema||''}</div>
       <div class="det-meta">
