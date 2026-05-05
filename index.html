@@ -169,6 +169,70 @@ select:hover,select:focus{border-color:var(--acc);outline:none}
 .notif.show{transform:translateY(0);opacity:1}.notif.error{border-color:var(--acc2);color:var(--acc2)}.notif.warn{border-color:var(--acc3);color:var(--acc3)}
 .saving-row{opacity:.5;pointer-events:none}
 ::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--brd2);border-radius:2px}
+
+/* ── MOBILE ── */
+.mobile-bar{display:none}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:590;backdrop-filter:blur(2px)}
+.sidebar-overlay.open{display:block}
+@media(max-width:768px){
+  header{padding:10px 14px;flex-wrap:wrap;gap:8px}
+  .hd-left p{display:none}
+  .hd-left h1{font-size:14px}
+  .hd-right{gap:8px}
+  .hd-stats{gap:10px}
+  .hd-stat-n{font-size:16px}
+  .hd-stat-l{font-size:8px}
+  .auth-pill{padding:4px 10px;font-size:9px}
+
+  .filters{padding:8px 12px;gap:6px}
+  .search-box{max-width:100%;flex:1 1 100%}
+  select{min-width:0;flex:1;font-size:10px;padding:4px 6px}
+
+  .body{grid-template-columns:1fr;position:relative}
+
+  .sidebar{
+    position:fixed;left:0;top:0;bottom:0;width:82vw;max-width:300px;
+    z-index:600;transform:translateX(-105%);transition:transform .25s cubic-bezier(.4,0,.2,1);
+    box-shadow:6px 0 30px rgba(0,0,0,.6);
+  }
+  .sidebar.open{transform:translateX(0)}
+
+  .mobile-bar{
+    display:flex;align-items:center;gap:10px;
+    padding:10px 14px;border-bottom:1px solid var(--brd);
+    background:var(--s1);flex-shrink:0;
+  }
+  .mobile-bar-title{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--muted2);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .btn-drawer{background:var(--s2);border:1px solid var(--brd);color:var(--txt);padding:6px 11px;border-radius:5px;font-size:17px;cursor:pointer;line-height:1;flex-shrink:0}
+
+  .content{padding-bottom:72px}
+  .detail{padding:14px 14px 20px}
+  .det-inst{font-size:16px}
+  .det-meta{gap:8px}
+  .dm{font-size:9px}
+
+  .brow{grid-template-columns:100px 1fr 36px;gap:5px}
+  .blabel{font-size:10px}
+  .bpct{font-size:10px}
+  .btrack{height:18px}
+
+  .section-tabs{width:100%}
+  .sec-tab{flex:1;text-align:center;font-size:9px;padding:6px 6px}
+  .tab{font-size:9px;padding:6px 10px;letter-spacing:.5px}
+  .qcard-hd{flex-direction:column;gap:8px}
+
+  .modal{max-width:100%;height:92vh;border-radius:10px 10px 0 0;position:fixed;bottom:0;left:0;right:0}
+  .modal-overlay{align-items:flex-end;padding:0}
+  .modal-header{padding:12px 14px}
+  .modal-title{font-size:13px}
+  .btn{padding:5px 10px;font-size:10px}
+  .modal-actions{gap:5px}
+  .ed-table th{font-size:8px;padding:5px 5px}
+  .ed-cell{font-size:10px}
+
+  .fab{bottom:14px;padding:7px 16px;font-size:10px}
+  .login-box{margin:12px;border-radius:8px}
+}
 </style>
 </head>
 <body>
@@ -208,8 +272,19 @@ select:hover,select:focus{border-color:var(--acc);outline:none}
 </div>
 
 <div class="body">
-  <div class="sidebar" id="sidebar"></div>
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeDrawer()"></div>
+  <div class="sidebar" id="sidebar">
+    <div class="mobile-bar">
+      <span class="mobile-bar-title">Pesquisas 2026</span>
+      <button class="btn-drawer" onclick="closeDrawer()">✕</button>
+    </div>
+  </div><!-- /sidebar -->
   <div class="content" id="content">
+    <!-- mobile top bar -->
+    <div class="mobile-bar" id="mobile-topbar">
+      <button class="btn-drawer" onclick="openDrawer()">☰</button>
+      <span class="mobile-bar-title" id="mobile-title">Selecione uma pesquisa</span>
+    </div>
     <div class="placeholder">
       <div class="ph-icon">⏳</div>
       <div class="ph-title">Carregando…</div>
@@ -509,7 +584,15 @@ function renderSidebar(){
 }
 
 // ── DETAIL ────────────────────────────────────────────────────────────────────
-function selectItem(arquivo){selected=arquivo;activeSection='resultados';renderSidebar();renderDetail(arquivo);}
+function selectItem(arquivo){
+  selected=arquivo;activeSection='resultados';
+  renderSidebar();renderDetail(arquivo);
+  // mobile: close drawer and update title
+  closeDrawer();
+  const p=DB.pesquisas.find(x=>x.arquivo===arquivo);
+  const mt=document.getElementById('mobile-title');
+  if(mt&&p) mt.textContent=p.instituto+' · '+p.abrangencia;
+}
 
 function renderDetail(arquivo){
   const p=DB.pesquisas.find(x=>x.arquivo===arquivo);if(!p)return;
@@ -801,6 +884,18 @@ document.addEventListener('keydown',e=>{
     e.preventDefault();saveToSupabase();
   }
 });
+
+// ── DRAWER (mobile) ───────────────────────────────────────────────────────────
+function openDrawer(){
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sidebar-overlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeDrawer(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+  document.body.style.overflow='';
+}
 
 loadAll();
 </script>
