@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pesquisas Eleitorais 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:ital,wght@0,300;0,400;0,500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --bg:#0b0d12;--s1:#12151e;--s2:#181c28;--s3:#1e2233;
+  --brd:#252b3d;--brd2:#2e3550;
+  --txt:#dde1f0;--muted:#6b7494;--muted2:#8891b4;
+  --acc:#5b8ef5;--acc2:#e05c5c;--acc3:#f5b731;--acc4:#3ecf8e;--acc5:#b58bfa;--acc6:#f97316;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--txt);font-family:'DM Mono',monospace;font-size:13px;display:flex;flex-direction:column}
+
+/* HEADER */
+header{padding:16px 32px;border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between;gap:16px;background:var(--s1);flex-shrink:0;flex-wrap:wrap}
+.hd-left h1{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;letter-spacing:-.3px}
+.hd-left h1 em{font-style:normal;color:var(--acc)}
+.hd-left p{color:var(--muted);font-size:10px;margin-top:3px;letter-spacing:.5px}
+.hd-right{display:flex;gap:16px;align-items:center}
+.hd-stats{display:flex;gap:16px}
+.hd-stat{text-align:right}
+.hd-stat-n{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;line-height:1}
+.hd-stat-l{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px}
+.n1{color:var(--acc3)}.n2{color:var(--acc)}.n3{color:var(--acc4)}.n4{color:var(--acc5)}
+
+/* AUTH */
+.auth-pill{display:flex;align-items:center;gap:7px;padding:6px 14px;border-radius:20px;font-size:10px;font-weight:600;border:1px solid var(--brd);cursor:pointer;transition:all .2s;white-space:nowrap;font-family:'DM Mono',monospace}
+.auth-pill.out{color:var(--muted);background:var(--s2)}.auth-pill.out:hover{border-color:var(--acc);color:var(--acc)}
+.auth-pill.in{color:var(--acc4);background:#0a1f14;border-color:var(--acc4)}
+.auth-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.auth-pill.out .auth-dot{background:var(--muted)}.auth-pill.in .auth-dot{background:var(--acc4);box-shadow:0 0 6px var(--acc4)}
+
+/* FILTERS */
+.filters{padding:10px 32px;border-bottom:1px solid var(--brd);display:flex;gap:10px;flex-wrap:wrap;align-items:center;background:var(--s1);flex-shrink:0}
+.fl{color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:1px}
+select{background:var(--s2);border:1px solid var(--brd);color:var(--txt);padding:5px 10px;border-radius:4px;font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;min-width:120px}
+select:hover,select:focus{border-color:var(--acc);outline:none}
+.search-box{background:var(--s2);border:1px solid var(--brd);color:var(--txt);padding:5px 10px;border-radius:4px;font-family:'DM Mono',monospace;font-size:11px;flex:1;max-width:200px}
+.search-box:focus{border-color:var(--acc);outline:none}
+.search-box::placeholder{color:var(--muted)}
+
+/* LAYOUT */
+.body{display:grid;grid-template-columns:296px 1fr;flex:1;overflow:hidden;min-height:0}
+.sidebar{border-right:1px solid var(--brd);overflow-y:auto;background:var(--s1)}
+.sb-group{border-bottom:1px solid var(--brd)}
+.sb-group-hd{padding:8px 14px;font-family:'Syne',sans-serif;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);display:flex;justify-content:space-between;background:var(--s2);border-bottom:1px solid var(--brd)}
+.sb-group-ct{color:var(--acc3);font-size:10px}
+.sb-item{padding:9px 14px 9px 16px;cursor:pointer;transition:background .1s;border-bottom:1px solid var(--brd);display:flex;flex-direction:column;gap:3px}
+.sb-item:hover{background:var(--s2)}.sb-item.sel{background:var(--s3);border-left:3px solid var(--acc);padding-left:13px}
+.sb-inst{font-size:11px;font-weight:500;color:var(--acc);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-tema{font-size:10px;color:var(--muted2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-row{display:flex;justify-content:space-between;gap:8px}
+.sb-date{font-size:9px;color:var(--muted);white-space:nowrap;flex-shrink:0}
+.sb-tags{display:flex;gap:3px;flex-wrap:wrap;margin-top:2px}
+.tag{padding:1px 5px;border-radius:2px;font-size:8px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+.tc{background:#1f1827;color:var(--acc5)}.ta{background:#141c30;color:var(--acc)}.tn{background:#211d10;color:var(--acc3)}.top{background:#0e2118;color:var(--acc4)}
+
+/* CONTENT */
+.content{overflow-y:auto;background:var(--bg)}
+.placeholder{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);gap:14px;text-align:center;padding:40px}
+.ph-icon{font-size:48px;opacity:.15;filter:grayscale(1)}
+.ph-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:var(--muted2)}
+.ph-sub{font-size:11px;max-width:300px;line-height:1.8}
+
+/* LOADING */
+.loading-screen{position:fixed;inset:0;background:var(--bg);z-index:900;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+.loading-screen.hidden{display:none}
+.spinner{width:30px;height:30px;border:3px solid var(--brd2);border-top-color:var(--acc);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-msg{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--muted2)}
+.loading-sub{font-size:11px;color:var(--muted);max-width:280px;text-align:center}
+
+/* LOGIN MODAL */
+.login-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(6px);z-index:800;display:none;align-items:center;justify-content:center}
+.login-overlay.open{display:flex}
+.login-box{background:var(--s1);border:1px solid var(--brd2);border-radius:10px;padding:32px;width:100%;max-width:360px;box-shadow:0 24px 80px rgba(0,0,0,.6)}
+.login-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;margin-bottom:4px}
+.login-sub{color:var(--muted);font-size:11px;margin-bottom:24px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:10px;color:var(--muted2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px}
+.field input{width:100%;background:var(--s3);border:1px solid var(--brd);color:var(--txt);padding:8px 12px;border-radius:5px;font-family:'DM Mono',monospace;font-size:12px}
+.field input:focus{outline:none;border-color:var(--acc)}
+.login-err{color:var(--acc2);font-size:11px;margin-bottom:12px;display:none}
+.login-actions{display:flex;gap:8px;margin-top:20px}
+
+/* DETAIL */
+.detail{padding:22px 28px}
+.det-hd{margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--brd)}
+.det-inst{font-family:'Syne',sans-serif;font-size:21px;font-weight:800;letter-spacing:-.5px}
+.det-tema{font-size:12px;color:var(--muted2);margin-top:4px;font-style:italic}
+.det-meta{display:flex;gap:18px;flex-wrap:wrap;margin-top:10px}
+.dm{font-size:10px;color:var(--muted);display:flex;gap:5px;align-items:center}
+.dm strong{color:var(--txt)}
+.section-tabs{display:flex;margin-bottom:16px;background:var(--s1);border:1px solid var(--brd);border-radius:5px;overflow:hidden;width:fit-content}
+.sec-tab{padding:7px 16px;cursor:pointer;font-size:10px;font-weight:700;color:var(--muted);transition:all .15s;text-transform:uppercase;letter-spacing:.8px;white-space:nowrap}
+.sec-tab:hover{color:var(--txt)}.sec-tab.on{background:var(--s3);color:var(--acc)}
+.tabs{display:flex;border-bottom:1px solid var(--brd);margin-bottom:18px;overflow-x:auto}
+.tab{padding:7px 14px;cursor:pointer;font-size:10px;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;transition:all .15s;text-transform:uppercase;letter-spacing:.8px;white-space:nowrap;margin-bottom:-1px;flex-shrink:0}
+.tab:hover{color:var(--txt)}.tab.on{color:var(--acc);border-bottom-color:var(--acc)}
+.qcard{margin-bottom:22px;background:var(--s1);border-radius:6px;border:1px solid var(--brd);overflow:hidden}
+.qcard-hd{padding:10px 14px;border-bottom:1px solid var(--brd);display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.q-label{font-family:'Instrument Serif',serif;font-style:italic;font-size:14px;color:var(--muted2);line-height:1.4}
+.q-label strong{font-style:normal;color:var(--txt)}
+.q-scens{display:flex;gap:4px;flex-wrap:wrap;flex-shrink:0}
+.scen{padding:2px 8px;border-radius:3px;font-size:9px;font-weight:600;text-transform:uppercase;cursor:pointer;background:var(--s3);border:1px solid var(--brd);color:var(--muted);transition:all .1s}
+.scen:hover{border-color:var(--acc);color:var(--txt)}.scen.on{background:#0e1e40;border-color:var(--acc);color:var(--acc)}
+.qcard-body{padding:12px 14px 14px}
+.op-tema-section{margin-bottom:20px}
+.op-tema-label{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--acc5);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--brd)}
+.op-card{background:var(--s1);border:1px solid var(--brd);border-radius:6px;overflow:hidden;margin-bottom:10px}
+.op-card-hd{padding:9px 14px;border-bottom:1px solid var(--brd);font-family:'Instrument Serif',serif;font-style:italic;font-size:13px;color:var(--muted2)}
+.op-card-body{padding:10px 14px 12px}
+.barchart{display:flex;flex-direction:column;gap:7px}
+.brow{display:grid;grid-template-columns:170px 1fr 46px;align-items:center;gap:8px}
+.blabel{font-size:11px;color:var(--txt);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.btrack{background:var(--s3);border-radius:2px;height:20px;overflow:hidden;position:relative}
+.bfill{height:100%;border-radius:2px;position:absolute;left:0;top:0;transition:width .4s cubic-bezier(.4,0,.2,1)}
+.bpct{font-size:11px;font-weight:500}
+.empty{color:var(--muted);font-size:11px;padding:12px 0;font-style:italic}
+.no-res{color:var(--muted);padding:24px;text-align:center;font-size:11px}
+
+/* EDITOR */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--s1);border:1px solid var(--brd2);border-radius:8px;width:100%;max-width:1100px;height:90vh;display:flex;flex-direction:column;box-shadow:0 24px 80px rgba(0,0,0,.6);overflow:hidden}
+.modal-header{padding:14px 18px;border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:var(--s2)}
+.modal-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;letter-spacing:-.3px}
+.modal-title span{color:var(--acc3)}
+.modal-actions{display:flex;gap:8px;align-items:center}
+.btn{padding:6px 14px;border-radius:4px;font-family:'DM Mono',monospace;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;border:1px solid transparent;text-transform:uppercase;letter-spacing:.5px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-primary{background:var(--acc);color:#fff;border-color:var(--acc)}.btn-primary:hover:not(:disabled){background:#4a7de0}
+.btn-supa{background:#0d2a1a;color:var(--acc4);border-color:var(--acc4)}.btn-supa:hover:not(:disabled){background:#112f1e}
+.btn-xl{background:#1a1f0d;color:#84cc16;border-color:#84cc16}.btn-xl:hover:not(:disabled){background:#1f2610}
+.btn-ghost{background:transparent;color:var(--muted);border-color:var(--brd)}.btn-ghost:hover{color:var(--txt);border-color:var(--muted)}
+.btn-close{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:4px 8px;line-height:1}.btn-close:hover{color:var(--txt)}
+.ed-tabs{display:flex;border-bottom:1px solid var(--brd);background:var(--s2);flex-shrink:0}
+.ed-tab{padding:8px 18px;cursor:pointer;font-size:10px;font-weight:700;color:var(--muted);border-bottom:2px solid transparent;transition:all .15s;text-transform:uppercase;letter-spacing:.8px;white-space:nowrap;margin-bottom:-1px}
+.ed-tab:hover{color:var(--txt)}.ed-tab.on{color:var(--acc3);border-bottom-color:var(--acc3)}
+.ed-toolbar{padding:10px 14px;border-bottom:1px solid var(--brd);display:flex;gap:8px;align-items:center;flex-shrink:0;flex-wrap:wrap;background:var(--s1)}
+.ed-search{background:var(--s3);border:1px solid var(--brd);color:var(--txt);padding:5px 10px;border-radius:4px;font-family:'DM Mono',monospace;font-size:11px;flex:1;max-width:220px}
+.ed-search:focus{outline:none;border-color:var(--acc)}.ed-search::placeholder{color:var(--muted)}
+.ed-count{font-size:10px;color:var(--muted)}
+.ed-filter-col{background:var(--s3);border:1px solid var(--brd);color:var(--txt);padding:5px 10px;border-radius:4px;font-family:'DM Mono',monospace;font-size:11px;cursor:pointer}
+.ed-filter-col:focus{outline:none;border-color:var(--acc)}
+.ed-table-wrap{flex:1;overflow:auto;min-height:0}
+.ed-table{width:100%;border-collapse:collapse;font-size:11px}
+.ed-table th{position:sticky;top:0;background:var(--s2);color:var(--muted2);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:7px 10px;border-bottom:2px solid var(--brd2);text-align:left;white-space:nowrap;z-index:10;cursor:pointer}
+.ed-table th:hover{color:var(--txt)}.ed-table th.sort-asc::after{content:' ▲';color:var(--acc)}.ed-table th.sort-desc::after{content:' ▼';color:var(--acc)}
+.ed-table td{padding:3px 6px;border-bottom:1px solid var(--brd);vertical-align:top}
+.ed-table tr:hover td{background:var(--s2)}.ed-table tr.new-row td{background:#0d2010}.ed-table tr.dirty td{background:#1a180a}
+.ed-cell{background:transparent;border:1px solid transparent;color:var(--txt);font-family:'DM Mono',monospace;font-size:11px;width:100%;padding:3px 5px;border-radius:3px;resize:none;min-height:24px}
+.ed-cell:focus{outline:none;background:var(--s3);border-color:var(--acc)}.ed-cell.changed{border-color:var(--acc3)!important;background:#1a180a!important}
+.row-del{background:none;border:none;color:var(--muted);cursor:pointer;padding:2px 6px;font-size:13px;border-radius:3px}.row-del:hover{color:var(--acc2);background:#3d1a1a}
+.row-num{color:var(--muted);font-size:9px;text-align:right;padding-right:6px;user-select:none;width:28px}
+.modal-footer{padding:10px 16px;border-top:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:var(--s2);gap:12px;flex-wrap:wrap}
+.footer-info{font-size:10px;color:var(--muted);display:flex;gap:14px}
+.fi-stat strong{color:var(--txt)}
+.change-dot{width:7px;height:7px;border-radius:50%;background:var(--acc3);display:inline-block;margin-right:4px;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.fab{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:500;display:none;align-items:center;gap:7px;padding:8px 20px;font-size:11px;box-shadow:0 4px 20px rgba(0,0,0,.5);white-space:nowrap;border-radius:30px}
+.notif{position:fixed;bottom:20px;right:20px;padding:9px 16px;border-radius:5px;font-size:11px;font-weight:600;z-index:2000;background:var(--s1);border:1px solid var(--acc4);color:var(--acc4);transform:translateY(60px);opacity:0;transition:all .3s;max-width:300px}
+.notif.show{transform:translateY(0);opacity:1}.notif.error{border-color:var(--acc2);color:var(--acc2)}.notif.warn{border-color:var(--acc3);color:var(--acc3)}
+.saving-row{opacity:.5;pointer-events:none}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--brd2);border-radius:2px}
+</style>
+</head>
+<body>
+
+<div class="loading-screen" id="loading-screen">
+  <div class="spinner"></div>
+  <div class="loading-msg">Carregando base de dados…</div>
+  <div class="loading-sub" id="loading-sub">Conectando ao Supabase</div>
+</div>
+
+<header>
+  <div class="hd-left">
+    <h1>Pesquisas <em>Eleitorais 2026</em></h1>
+    <p>Base consolidada · 13 institutos · Atualizado em Abril/2026</p>
+  </div>
+  <div class="hd-right">
+    <div class="hd-stats">
+      <div class="hd-stat"><div class="hd-stat-n n2" id="ct-vis">—</div><div class="hd-stat-l">visíveis</div></div>
+      <div class="hd-stat"><div class="hd-stat-n n1" id="ct-p">—</div><div class="hd-stat-l">pesquisas</div></div>
+      <div class="hd-stat"><div class="hd-stat-n n3" id="ct-r">—</div><div class="hd-stat-l">resultados</div></div>
+      <div class="hd-stat"><div class="hd-stat-n n4" id="ct-o">—</div><div class="hd-stat-l">op. pública</div></div>
+    </div>
+    <div class="auth-pill out" id="auth-btn" onclick="toggleAuth()">
+      <div class="auth-dot"></div>
+      <span id="auth-label">Entrar</span>
+    </div>
+  </div>
+</header>
+
+<div class="filters">
+  <span class="fl">Filtrar:</span>
+  <input class="search-box" id="fi-search" placeholder="Buscar…">
+  <select id="fi-abr"><option value="">Todas regiões</option></select>
+  <select id="fi-cargo"><option value="">Todos cargos</option></select>
+  <select id="fi-inst"><option value="">Todos institutos</option></select>
+  <select id="fi-periodo"><option value="">Todos períodos</option></select>
+</div>
+
+<div class="body">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="content" id="content">
+    <div class="placeholder">
+      <div class="ph-icon">⏳</div>
+      <div class="ph-title">Carregando…</div>
+      <div class="ph-sub">Buscando dados do Supabase</div>
+    </div>
+  </div>
+</div>
+
+<button class="btn btn-ghost fab" id="fab" onclick="openEditor()">✏️ Editar Base</button>
+<div class="notif" id="notif"></div>
+
+<!-- LOGIN MODAL -->
+<div class="login-overlay" id="login-overlay">
+  <div class="login-box">
+    <div class="login-title">Acesso ao Editor</div>
+    <div class="login-sub">Entre com sua conta para editar a base de dados</div>
+    <div class="field"><label>E-mail</label><input type="email" id="login-email" placeholder="seu@email.com"></div>
+    <div class="field"><label>Senha</label><input type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="login-err" id="login-err"></div>
+    <div class="login-actions">
+      <button class="btn btn-primary" onclick="doLogin()" style="flex:1">Entrar</button>
+      <button class="btn btn-ghost" onclick="closeLogin()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDITOR MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeEditorOnBg(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Editor da <span>Base de Dados</span></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-xl" onclick="exportExcel()">⬇ Excel</button>
+        <button class="btn btn-supa" id="btn-save" onclick="saveToSupabase()">☁ Salvar</button>
+        <button class="btn btn-ghost" onclick="discardChanges()">Descartar</button>
+        <button class="btn-close" onclick="closeEditor()">×</button>
+      </div>
+    </div>
+    <div class="ed-tabs">
+      <div class="ed-tab on" onclick="switchEdSheet('pesquisas',this)">Pesquisas <span id="ed-ct-p" style="color:var(--acc3)"></span></div>
+      <div class="ed-tab" onclick="switchEdSheet('resultados',this)">Resultados <span id="ed-ct-r" style="color:var(--acc3)"></span></div>
+      <div class="ed-tab" onclick="switchEdSheet('opiniao',this)">Opinião Pública <span id="ed-ct-o" style="color:var(--acc3)"></span></div>
+    </div>
+    <div class="ed-toolbar">
+      <input class="ed-search" id="ed-search" placeholder="Filtrar linhas…" oninput="renderEdTable()">
+      <select class="ed-filter-col" id="ed-filter-col" onchange="renderEdTable()"><option value="">Todos campos</option></select>
+      <span class="ed-count" id="ed-count"></span>
+      <button class="btn btn-primary" onclick="addRow()" style="margin-left:auto">+ Nova Linha</button>
+    </div>
+    <div class="ed-table-wrap" id="ed-table-wrap"></div>
+    <div class="modal-footer">
+      <div class="footer-info">
+        <div class="fi-stat">Pesquisas: <strong id="ft-p">—</strong></div>
+        <div class="fi-stat">Resultados: <strong id="ft-r">—</strong></div>
+        <div class="fi-stat">Op. Pública: <strong id="ft-o">—</strong></div>
+      </div>
+      <div id="footer-changes" style="font-size:10px;color:var(--muted)">Nenhuma alteração</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  CONFIGURAÇÃO — substitua com seus valores do Supabase      ║
+// ╚══════════════════════════════════════════════════════════════╝
+const SUPABASE_URL    = 'https://ogqnkbudellvwxzmchop.supabase.co';
+const SUPABASE_ANON   = 'sb_publishable_GWN9nHA5h-jDI5ZMXofQ7w_SW7pQCSh';  // anon/public key
+// ════════════════════════════════════════════════════════════════
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+const PALETTE=['#5b8ef5','#e05c5c','#f5b731','#3ecf8e','#b58bfa','#f97316','#14b8a6','#ec4899','#84cc16','#06b6d4','#8b5cf6','#f43f5e'];
+const GRAY_KW=['ns/nr','indecis','branco','nulo','não sabe','não opinou','não sei','nenhum'];
+const isGray=s=>GRAY_KW.some(g=>s.toLowerCase().includes(g));
+
+let DB={pesquisas:[],resultados:[],opiniao_publica:[]};
+let filtered=[];
+let selected=null;
+let activeTipo=null;
+let activeSection='resultados';
+let currentUser=null;
+
+// ── AUTH ──────────────────────────────────────────────────────────────────────
+sb.auth.onAuthStateChange((event,session)=>{
+  currentUser=session?.user||null;
+  updateAuthUI();
+  if(currentUser){
+    document.getElementById('fab').style.display='flex';
+    closeLogin();
+  } else {
+    document.getElementById('fab').style.display='none';
+  }
+});
+
+function toggleAuth(){
+  if(currentUser){ sb.auth.signOut(); showNotif('Desconectado','warn'); return; }
+  document.getElementById('login-overlay').classList.add('open');
+  setTimeout(()=>document.getElementById('login-email').focus(),100);
+}
+
+async function doLogin(){
+  const email=document.getElementById('login-email').value.trim();
+  const pass=document.getElementById('login-pass').value;
+  const errEl=document.getElementById('login-err');
+  errEl.style.display='none';
+  if(!email||!pass){errEl.textContent='Preencha e-mail e senha.';errEl.style.display='block';return;}
+  const btn=document.querySelector('.login-actions .btn-primary');
+  btn.textContent='Entrando…';btn.disabled=true;
+  const {error}=await sb.auth.signInWithPassword({email,password:pass});
+  btn.textContent='Entrar';btn.disabled=false;
+  if(error){errEl.textContent=error.message;errEl.style.display='block';}
+  else showNotif('✓ Bem-vindo, '+email.split('@')[0]+'!');
+}
+
+function closeLogin(){document.getElementById('login-overlay').classList.remove('open');}
+
+function updateAuthUI(){
+  const btn=document.getElementById('auth-btn');
+  const lbl=document.getElementById('auth-label');
+  if(currentUser){
+    btn.className='auth-pill in';
+    lbl.textContent=currentUser.email.split('@')[0];
+  } else {
+    btn.className='auth-pill out';
+    lbl.textContent='Entrar';
+  }
+}
+
+// ── LOAD DATA ─────────────────────────────────────────────────────────────────
+async function loadAll(){
+  const sub=document.getElementById('loading-sub');
+  try {
+    sub.textContent='Carregando pesquisas…';
+    const [rp,rr,ro]=await Promise.all([
+      sb.from('pesquisas').select('*').order('id'),
+      sb.from('resultados').select('*').order('id'),
+      sb.from('opiniao_publica').select('*').order('id'),
+    ]);
+    if(rp.error)throw rp.error;
+    if(rr.error)throw rr.error;
+    if(ro.error)throw ro.error;
+    DB.pesquisas=rp.data;
+    DB.resultados=rr.data;
+    DB.opiniao_publica=ro.data;
+    filtered=[...DB.pesquisas];
+    document.getElementById('loading-screen').classList.add('hidden');
+    updateHeaderCounts();
+    initFilters();
+    renderSidebar();
+    document.getElementById('content').innerHTML=`<div class="placeholder">
+      <div class="ph-icon">📊</div>
+      <div class="ph-title">Selecione uma pesquisa</div>
+      <div class="ph-sub">Clique em qualquer item da lista para visualizar resultados e gráficos.</div>
+    </div>`;
+  } catch(e) {
+    sub.textContent='⚠ Erro: '+e.message;
+    document.querySelector('.loading-screen .spinner').style.display='none';
+    document.querySelector('.loading-screen .loading-msg').textContent='Falha ao carregar dados';
+  }
+}
+
+// ── SAVE TO SUPABASE ──────────────────────────────────────────────────────────
+async function saveToSupabase(){
+  if(!currentUser){showNotif('Faça login primeiro','warn');return;}
+  const btn=document.getElementById('btn-save');
+  btn.disabled=true;btn.textContent='⏳ Salvando…';
+  const sk=SHEET_MAP[activeEdSheet];
+
+  try {
+    // Find new rows (no id) and dirty rows (has id + _dirty)
+    const newRows=WD[sk].filter(r=>!r.id).map(r=>{const o={...r};delete o._new;delete o._dirty;return o;});
+    const dirtyRows=WD[sk].filter(r=>r.id&&r._dirty).map(r=>{const o={...r};delete o._new;delete o._dirty;return o;});
+    const deletedIds=WD[sk+'_deleted']||[];
+
+    if(newRows.length){
+      const {error}=await sb.from(sk).insert(newRows);
+      if(error)throw error;
+    }
+    for(const row of dirtyRows){
+      const {error}=await sb.from(sk).update(row).eq('id',row.id);
+      if(error)throw error;
+    }
+    for(const id of deletedIds){
+      const {error}=await sb.from(sk).delete().eq('id',id);
+      if(error)throw error;
+    }
+
+    // Reload this table
+    const {data,error}=await sb.from(sk).select('*').order('id');
+    if(error)throw error;
+    DB[sk]=data;
+    WD[sk]=data.map(r=>({...r}));
+    WD[sk+'_deleted']=[];
+    edChanges=0;
+    // Sync to DB
+    filtered=[...DB.pesquisas];
+    updateHeaderCounts();
+    renderSidebar();
+    if(selected&&DB.pesquisas.find(p=>p.arquivo===selected))renderDetail(selected);
+    renderEdTable();
+    updateChangeIndicator();
+    showNotif(`✓ Salvo no Supabase — ${newRows.length} inserções, ${dirtyRows.length} atualizações, ${deletedIds.length} remoções`);
+  } catch(e){
+    showNotif('Erro ao salvar: '+e.message,'error');
+  } finally {
+    btn.disabled=false;btn.textContent='☁ Salvar';
+  }
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function safeId(s){return s.replace(/[^a-zA-Z0-9]/g,'_').slice(0,50)}
+function fmtDate(p){
+  const d=(p.divulgacao||p.data_fim||p.data_inicio||'').slice(0,10);
+  if(!d)return'—';
+  const pts=d.split('-');
+  if(pts.length===3)return`${pts[2].padStart(2,'0')}/${pts[1]}/${pts[0]}`;
+  if(pts.length===2)return`${pts[1]}/${pts[0]}`;
+  return d;
+}
+function getAno(p){
+  const d=p.divulgacao||p.data_fim||p.data_inicio||'';
+  if(d.startsWith('2021'))return'2021';if(d.startsWith('2022'))return'2022';
+  if(d.startsWith('2025'))return'2025';if(d.startsWith('2026'))return'2026';
+  return'Outros';
+}
+function updateHeaderCounts(){
+  document.getElementById('ct-vis').textContent=filtered.length;
+  document.getElementById('ct-p').textContent=DB.pesquisas.length;
+  document.getElementById('ct-r').textContent=DB.resultados.length;
+  document.getElementById('ct-o').textContent=DB.opiniao_publica.length;
+}
+
+// ── FILTERS ───────────────────────────────────────────────────────────────────
+function initFilters(){
+  const uniq=(arr,key)=>[...new Set(arr.map(x=>x[key]).filter(Boolean))].sort();
+  const fill=(id,vals,def)=>{
+    const el=document.getElementById(id);
+    el.innerHTML=`<option value="">${def}</option>`+vals.map(v=>`<option value="${v}">${v}</option>`).join('');
+    el.addEventListener('change',applyFilters);
+  };
+  fill('fi-abr',uniq(DB.pesquisas,'abrangencia'),'Todas regiões');
+  fill('fi-cargo',uniq(DB.pesquisas,'cargo'),'Todos cargos');
+  fill('fi-inst',uniq(DB.pesquisas,'instituto'),'Todos institutos');
+  fill('fi-periodo',[...new Set(DB.pesquisas.map(getAno))].sort(),'Todos períodos');
+  document.getElementById('fi-search').addEventListener('input',applyFilters);
+}
+
+function applyFilters(){
+  const abr=document.getElementById('fi-abr').value,cargo=document.getElementById('fi-cargo').value;
+  const inst=document.getElementById('fi-inst').value,per=document.getElementById('fi-periodo').value;
+  const q=document.getElementById('fi-search').value.toLowerCase().trim();
+  filtered=DB.pesquisas.filter(p=>{
+    if(abr&&p.abrangencia!==abr)return false;
+    if(cargo&&p.cargo!==cargo)return false;
+    if(inst&&p.instituto!==inst)return false;
+    if(per&&getAno(p)!==per)return false;
+    if(q&&!p.instituto?.toLowerCase().includes(q)&&!p.tema?.toLowerCase().includes(q)&&!p.abrangencia?.toLowerCase().includes(q))return false;
+    return true;
+  });
+  document.getElementById('ct-vis').textContent=filtered.length;
+  renderSidebar();
+}
+
+// ── SIDEBAR ───────────────────────────────────────────────────────────────────
+function renderSidebar(){
+  const sb=document.getElementById('sidebar');
+  if(!filtered.length){sb.innerHTML='<div class="no-res">Nenhuma pesquisa encontrada</div>';return;}
+  const groups={};
+  filtered.forEach(p=>{const g=p.abrangencia||'Outros';if(!groups[g])groups[g]=[];groups[g].push(p);});
+  // Ordenar cada grupo da mais recente para a mais antiga
+  const getDateStr=p=>(p.divulgacao||p.data_fim||p.data_inicio||'').slice(0,10);
+  Object.keys(groups).forEach(g=>{groups[g].sort((a,b)=>getDateStr(b).localeCompare(getDateStr(a)));});
+  let html='';
+  Object.keys(groups).sort().forEach(g=>{
+    html+=`<div class="sb-group"><div class="sb-group-hd"><span>${g}</span><span class="sb-group-ct">${groups[g].length}</span></div>`;
+    groups[g].forEach(p=>{
+      const sel=selected===p.arquivo?'sel':'';
+      const n=p.amostra?`n=${Number(parseFloat(p.amostra)).toLocaleString('pt-BR')}`:'';
+      const me=p.margem_erro_pp?`±${p.margem_erro_pp}pp`:'';
+      const hasOp=DB.opiniao_publica.some(r=>r.arquivo===p.arquivo);
+      html+=`<div class="sb-item ${sel}" onclick="selectItem('${p.arquivo.replace(/'/g,"\\'")}')">
+        <div class="sb-row"><span class="sb-inst">${p.instituto}</span><span class="sb-date">${fmtDate(p)}</span></div>
+        <div class="sb-tema">${p.tema||''}</div>
+        <div class="sb-tags">
+          ${p.cargo?`<span class="tag tc">${p.cargo}</span>`:''}
+          ${n?`<span class="tag tn">${n}</span>`:''}
+          ${me?`<span class="tag ta">${me}</span>`:''}
+          ${hasOp?`<span class="tag top">op. pública</span>`:''}
+        </div>
+      </div>`;
+    });
+    html+='</div>';
+  });
+  sb.innerHTML=html;
+}
+
+// ── DETAIL ────────────────────────────────────────────────────────────────────
+function selectItem(arquivo){selected=arquivo;activeSection='resultados';renderSidebar();renderDetail(arquivo);}
+
+function renderDetail(arquivo){
+  const p=DB.pesquisas.find(x=>x.arquivo===arquivo);if(!p)return;
+  const res=DB.resultados.filter(r=>r.arquivo===arquivo);
+  const op=DB.opiniao_publica.filter(r=>r.arquivo===arquivo);
+  const tipos=[...new Set(res.map(r=>r.tipo))];
+  activeTipo=tipos[0]||null;
+  const n=p.amostra?Number(parseFloat(p.amostra)).toLocaleString('pt-BR'):'—';
+  const me=p.margem_erro_pp?`±${p.margem_erro_pp}pp`:'—';
+  const hasOp=op.length>0;
+  const sw=hasOp?`<div class="section-tabs">
+    <div class="sec-tab ${activeSection==='resultados'?'on':''}" onclick="switchSection('resultados',this)">Resultados <span style="color:var(--acc3);font-size:9px">(${res.length})</span></div>
+    <div class="sec-tab ${activeSection==='opiniao'?'on':''}" onclick="switchSection('opiniao',this)">Opinião Pública <span style="color:var(--acc5);font-size:9px">(${op.length})</span></div>
+  </div>`:'';
+  document.getElementById('content').innerHTML=`<div class="detail">
+    <div class="det-hd">
+      <div class="det-inst">${p.instituto}</div>
+      <div class="det-tema">${p.tema||''}</div>
+      <div class="det-meta">
+        <div class="dm">📍 <strong>${p.abrangencia}</strong></div>
+        ${p.cargo?`<div class="dm">🗳️ <strong>${p.cargo}</strong></div>`:''}
+        <div class="dm">👥 n: <strong>${n}</strong></div>
+        <div class="dm">📐 <strong>${me}</strong></div>
+        ${p.registro_tse?`<div class="dm">📋 <strong>${p.registro_tse}</strong></div>`:''}
+        <div class="dm">📅 <strong>${fmtDate(p)}</strong></div>
+      </div>
+    </div>
+    ${sw}<div id="section-content"></div>
+  </div>`;
+  if(activeSection==='resultados')renderResultadosSection(res);else renderOpiniaoSection(op);
+}
+
+function switchSection(sec,el){
+  activeSection=sec;
+  document.querySelectorAll('.sec-tab').forEach(t=>t.classList.remove('on'));el.classList.add('on');
+  const res=DB.resultados.filter(r=>r.arquivo===selected);
+  const op=DB.opiniao_publica.filter(r=>r.arquivo===selected);
+  if(sec==='resultados')renderResultadosSection(res);else renderOpiniaoSection(op);
+}
+
+function renderResultadosSection(res){
+  const tipos=[...new Set(res.map(r=>r.tipo))];
+  activeTipo=tipos[0]||null;
+  const th=tipos.map((t,i)=>`<div class="tab ${i===0?'on':''}" onclick="switchTipo('${t}',this)">${t}</div>`).join('');
+  document.getElementById('section-content').innerHTML=`${tipos.length?`<div class="tabs">${th}</div>`:''}<div id="tipo-content"></div>`;
+  if(activeTipo)renderTipo(activeTipo,res);
+}
+
+function switchTipo(tipo,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));el.classList.add('on');
+  renderTipo(tipo,DB.resultados.filter(r=>r.arquivo===selected));
+}
+
+function renderTipo(tipo,res){
+  const rows=res.filter(r=>r.tipo===tipo);
+  const perguntas=[...new Set(rows.map(r=>r.pergunta))];
+  const el=document.getElementById('tipo-content');
+  if(!rows.length){el.innerHTML='<div class="empty">Sem dados.</div>';return;}
+  let html='';
+  perguntas.forEach(pergunta=>{
+    const prows=rows.filter(r=>r.pergunta===pergunta);
+    const cenarios=[...new Set(prows.map(r=>r.cenario))].sort((a,b)=>{const na=parseFloat(a),nb=parseFloat(b);if(!isNaN(na)&&!isNaN(nb))return na-nb;return a<b?-1:1;});
+    const pid=safeId(pergunta);
+    const sb2=cenarios.length>1?`<div class="q-scens" id="scens-${pid}">${cenarios.map((c,i)=>`<div class="scen ${i===0?'on':''}" onclick="switchCen('${pid}','${c}',this)">${c}</div>`).join('')}</div>`:'';
+    html+=`<div class="qcard"><div class="qcard-hd"><div class="q-label"><strong>${tipo}:</strong> ${pergunta}</div>${sb2}</div><div class="qcard-body"><div class="barchart" id="chart-${pid}">${renderBars(prows.filter(r=>r.cenario===cenarios[0]))}</div></div></div>`;
+  });
+  el.innerHTML=html;
+  perguntas.forEach(pergunta=>{
+    const pid=safeId(pergunta),ce=document.getElementById('chart-'+pid);
+    if(ce)ce.dataset.rows=JSON.stringify(rows.filter(r=>r.pergunta===pergunta));
+  });
+}
+
+function switchCen(pid,cenario,el){
+  const ce=document.getElementById('chart-'+pid);
+  document.getElementById('scens-'+pid).querySelectorAll('.scen').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  ce.innerHTML=renderBars(JSON.parse(ce.dataset.rows).filter(r=>r.cenario===cenario));
+}
+
+function renderOpiniaoSection(op){
+  if(!op.length){document.getElementById('section-content').innerHTML='<div class="empty">Sem dados de opinião pública.</div>';return;}
+  const temas=[...new Set(op.map(r=>r.tema))];
+  let html='';
+  temas.forEach(tema=>{
+    const tRows=op.filter(r=>r.tema===tema);
+    const perguntas=[...new Set(tRows.map(r=>r.pergunta))];
+    html+=`<div class="op-tema-section"><div class="op-tema-label">${tema}</div>`;
+    perguntas.forEach(pergunta=>{
+      const pRows=[...tRows.filter(r=>r.pergunta===pergunta)].sort((a,b)=>Number(b.percentual||0)-Number(a.percentual||0));
+      html+=`<div class="op-card"><div class="op-card-hd">${pergunta}</div><div class="op-card-body"><div class="barchart">${renderBarsOp(pRows)}</div></div></div>`;
+    });
+    html+='</div>';
+  });
+  document.getElementById('section-content').innerHTML=html;
+}
+
+function renderBars(rows){
+  if(!rows.length)return'<div class="empty">Sem dados</div>';
+  const sorted=[...rows].sort((a,b)=>Number(b.percentual||0)-Number(a.percentual||0));
+  const maxVal=Math.max(...sorted.map(r=>Number(r.percentual||0)),0.1);
+  const cm={};let ci=0;
+  sorted.forEach(r=>{if(!(r.item in cm)){cm[r.item]=isGray(r.item)?'#3a4060':PALETTE[ci++%PALETTE.length];}});
+  return sorted.map(r=>{
+    const pct=Number(r.percentual||0),w=Math.max(2,(pct/maxVal)*100),c=cm[r.item];
+    return`<div class="brow"><div class="blabel" title="${r.item}">${r.item}</div><div class="btrack"><div class="bfill" style="width:${w}%;background:${c}22;border-left:3px solid ${c}"></div></div><div class="bpct" style="color:${c}">${pct}%</div></div>`;
+  }).join('');
+}
+
+function renderBarsOp(rows){
+  if(!rows.length)return'<div class="empty">Sem dados</div>';
+  const maxVal=Math.max(...rows.map(r=>Number(r.percentual||0)),0.1);
+  const OC=['#b58bfa','#3ecf8e','#f5b731','#e05c5c','#5b8ef5','#f97316','#14b8a6','#ec4899'];
+  return rows.map((r,i)=>{
+    const pct=Number(r.percentual||0),w=Math.max(2,(pct/maxVal)*100),c=isGray(r.resposta||'')?'#3a4060':OC[i%OC.length];
+    return`<div class="brow"><div class="blabel" title="${r.resposta}">${r.resposta||''}</div><div class="btrack"><div class="bfill" style="width:${w}%;background:${c}22;border-left:3px solid ${c}"></div></div><div class="bpct" style="color:${c}">${pct}%</div></div>`;
+  }).join('');
+}
+
+// ── EDITOR ────────────────────────────────────────────────────────────────────
+let WD={pesquisas:[],resultados:[],opiniao_publica:[],pesquisas_deleted:[],resultados_deleted:[],opiniao_publica_deleted:[]};
+let activeEdSheet='pesquisas';
+let edChanges=0,edSortCol=null,edSortDir=1;
+const SHEET_MAP={pesquisas:'pesquisas',resultados:'resultados',opiniao:'opiniao_publica'};
+const COLS={
+  pesquisas:['arquivo','instituto','tema','abrangencia','cargo','data_inicio','data_fim','divulgacao','amostra','margem_erro_pp','registro_tse','fonte'],
+  resultados:['arquivo','instituto','abrangencia','cargo','tipo','cenario','pergunta','item','percentual','data_ref','fonte'],
+  opiniao_publica:['arquivo','instituto','tema','pergunta','resposta','percentual','data_ref','amostra','abrangencia','fonte']
+};
+const CW={arquivo:200,instituto:110,tema:150,abrangencia:95,cargo:75,data_inicio:85,data_fim:85,divulgacao:85,amostra:65,margem_erro_pp:65,registro_tse:105,fonte:55,tipo:85,cenario:65,pergunta:170,item:130,resposta:130,percentual:65,data_ref:75};
+
+function openEditor(){
+  WD.pesquisas=DB.pesquisas.map(r=>({...r}));
+  WD.resultados=DB.resultados.map(r=>({...r}));
+  WD.opiniao_publica=DB.opiniao_publica.map(r=>({...r}));
+  WD.pesquisas_deleted=[];WD.resultados_deleted=[];WD.opiniao_publica_deleted=[];
+  edChanges=0;activeEdSheet='pesquisas';
+  document.getElementById('modal-overlay').classList.add('open');
+  document.getElementById('ed-search').value='';
+  document.querySelectorAll('.ed-tab').forEach((t,i)=>t.classList.toggle('on',i===0));
+  renderEdTable();updateFtCounts();updateChangeIndicator();
+}
+
+function closeEditor(){
+  if(edChanges>0&&!confirm(`${edChanges} alteração(ões) não salvas. Fechar?`))return;
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+
+function closeEditorOnBg(e){if(e.target===document.getElementById('modal-overlay'))closeEditor();}
+
+function discardChanges(){
+  if(!confirm('Descartar todas as alterações?'))return;
+  openEditor();showNotif('Alterações descartadas','warn');
+}
+
+function switchEdSheet(sheet,el){
+  activeEdSheet=sheet;edSortCol=null;
+  document.querySelectorAll('.ed-tab').forEach(t=>t.classList.remove('on'));el.classList.add('on');
+  document.getElementById('ed-search').value='';
+  renderEdTable();
+}
+
+function renderEdTable(){
+  const sk=SHEET_MAP[activeEdSheet];
+  const rows=WD[sk],cols=COLS[sk];
+  const q=(document.getElementById('ed-search').value||'').toLowerCase().trim();
+  const fc=document.getElementById('ed-filter-col').value;
+  let visible=rows;
+  if(q)visible=rows.filter(r=>fc?String(r[fc]||'').toLowerCase().includes(q):cols.some(c=>String(r[c]||'').toLowerCase().includes(q)));
+  if(edSortCol){
+    visible=[...visible].sort((a,b)=>{
+      const av=String(a[edSortCol]||''),bv=String(b[edSortCol]||'');
+      const an=parseFloat(av),bn=parseFloat(bv);
+      if(!isNaN(an)&&!isNaN(bn))return(an-bn)*edSortDir;
+      return av.localeCompare(bv)*edSortDir;
+    });
+  }
+  document.getElementById('ed-count').textContent=`${visible.length} / ${rows.length} linhas`;
+  const fcEl=document.getElementById('ed-filter-col');
+  if(fcEl.dataset.sheet!==activeEdSheet){
+    fcEl.innerHTML='<option value="">Todos campos</option>'+cols.map(c=>`<option value="${c}">${c}</option>`).join('');
+    fcEl.dataset.sheet=activeEdSheet;
+  }
+  let html=`<table class="ed-table"><thead><tr><th style="width:28px">#</th>`;
+  cols.forEach(c=>{
+    const sc=edSortCol===c?(edSortDir===1?'sort-asc':'sort-desc'):'';
+    html+=`<th class="${sc}" style="min-width:${CW[c]||95}px" onclick="edSortBy('${c}')">${c}</th>`;
+  });
+  html+='<th style="width:32px"></th></tr></thead><tbody>';
+  visible.forEach(row=>{
+    const ri=rows.indexOf(row);
+    const dirty=row._dirty||row._new;
+    html+=`<tr class="${row._new?'new-row':dirty?'dirty':''}"><td class="row-num">${ri+1}</td>`;
+    cols.forEach(c=>{
+      const v=row[c]??'';
+      const ta=(c==='pergunta'||c==='tema'||c==='arquivo')?' rows="2"':'';
+      html+=`<td style="min-width:${CW[c]||95}px"><textarea class="ed-cell" data-ri="${ri}" data-col="${c}"${ta} oninput="onCellEdit(this,${ri},'${c}')">${String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea></td>`;
+    });
+    html+=`<td><button class="row-del" title="Remover" onclick="deleteRow(${ri})">✕</button></td></tr>`;
+  });
+  html+='</tbody></table>';
+  document.getElementById('ed-table-wrap').innerHTML=html;
+  updateEdCts();
+}
+
+function onCellEdit(el,ri,col){
+  const sk=SHEET_MAP[activeEdSheet];
+  WD[sk][ri][col]=el.value;
+  if(!WD[sk][ri]._new)WD[sk][ri]._dirty=true;
+  el.classList.add('changed');edChanges++;
+  updateChangeIndicator();updateFtCounts();
+}
+
+function addRow(){
+  const sk=SHEET_MAP[activeEdSheet];
+  const empty={_new:true};COLS[sk].forEach(c=>empty[c]='');
+  WD[sk].push(empty);edChanges++;
+  document.getElementById('ed-search').value='';
+  renderEdTable();updateChangeIndicator();updateFtCounts();
+  document.getElementById('ed-table-wrap').scrollTop=99999;
+  showNotif('Nova linha adicionada');
+}
+
+function deleteRow(ri){
+  const sk=SHEET_MAP[activeEdSheet];
+  const row=WD[sk][ri];
+  if(!confirm(`Remover linha ${ri+1}?`))return;
+  if(row.id)WD[sk+'_deleted'].push(row.id);
+  WD[sk].splice(ri,1);edChanges++;
+  renderEdTable();updateChangeIndicator();updateFtCounts();
+  showNotif('Linha removida');
+}
+
+function edSortBy(col){
+  if(edSortCol===col)edSortDir*=-1;else{edSortCol=col;edSortDir=1;}renderEdTable();
+}
+
+function updateEdCts(){
+  document.getElementById('ed-ct-p').textContent=`(${WD.pesquisas.length})`;
+  document.getElementById('ed-ct-r').textContent=`(${WD.resultados.length})`;
+  document.getElementById('ed-ct-o').textContent=`(${WD.opiniao_publica.length})`;
+}
+
+function updateFtCounts(){
+  document.getElementById('ft-p').textContent=WD.pesquisas.length;
+  document.getElementById('ft-r').textContent=WD.resultados.length;
+  document.getElementById('ft-o').textContent=WD.opiniao_publica.length;
+}
+
+function updateChangeIndicator(){
+  const el=document.getElementById('footer-changes');
+  if(edChanges===0){el.textContent='Nenhuma alteração';el.style.color='var(--muted)';}
+  else{el.innerHTML=`<span class="change-dot"></span>${edChanges} alteração(ões) — clique em ☁ Salvar`;el.style.color='var(--acc3)';}
+}
+
+function exportExcel(){
+  if(typeof XLSX==='undefined'){
+    const s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload=doExport;document.head.appendChild(s);return;
+  }
+  doExport();
+}
+
+function doExport(){
+  const wb=XLSX.utils.book_new();
+  const clean=arr=>arr.map(r=>{const o={...r};delete o._new;delete o._dirty;return o;});
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(clean(WD.pesquisas)),'pesquisas');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(clean(WD.resultados)),'resultados');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(clean(WD.opiniao_publica)),'opiniao_publica');
+  const stamp=new Date().toISOString().slice(0,10).replace(/-/g,'');
+  XLSX.writeFile(wb,`base_pesquisas_${stamp}.xlsx`);
+  showNotif('✓ Excel exportado');
+}
+
+function showNotif(msg,type='ok'){
+  const el=document.getElementById('notif');
+  el.textContent=msg;el.className='notif'+(type==='error'?' error':type==='warn'?' warn':'');
+  el.classList.add('show');clearTimeout(el._t);
+  el._t=setTimeout(()=>el.classList.remove('show'),3500);
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    if(document.getElementById('modal-overlay').classList.contains('open'))closeEditor();
+    else if(document.getElementById('login-overlay').classList.contains('open'))closeLogin();
+  }
+  if((e.ctrlKey||e.metaKey)&&e.key==='s'&&document.getElementById('modal-overlay').classList.contains('open')){
+    e.preventDefault();saveToSupabase();
+  }
+});
+
+loadAll();
+</script>
+</body>
+</html>
