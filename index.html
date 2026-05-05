@@ -273,17 +273,12 @@ select:hover,select:focus{border-color:var(--acc);outline:none}
 
 <div class="body">
   <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeDrawer()"></div>
-  <div class="sidebar" id="sidebar">
-    <div class="mobile-bar">
-      <span class="mobile-bar-title">Pesquisas 2026</span>
-      <button class="btn-drawer" onclick="closeDrawer()">✕</button>
-    </div>
-  </div><!-- /sidebar -->
+  <div class="sidebar" id="sidebar"></div>
   <div class="content" id="content">
     <!-- mobile top bar -->
     <div class="mobile-bar" id="mobile-topbar">
-      <button class="btn-drawer" onclick="openDrawer()">☰</button>
-      <span class="mobile-bar-title" id="mobile-title">Selecione uma pesquisa</span>
+      <button class="btn-drawer" onclick="openDrawer()">☰ Ver pesquisas</button>
+      <span class="mobile-bar-title" id="mobile-title"></span>
     </div>
     <div class="placeholder">
       <div class="ph-icon">⏳</div>
@@ -440,6 +435,7 @@ async function loadAll(){
       <div class="ph-icon">📊</div>
       <div class="ph-title">Selecione uma pesquisa</div>
       <div class="ph-sub">Clique em qualquer item da lista para visualizar resultados e gráficos.</div>
+      <button onclick="openDrawer()" class="btn btn-primary" style="margin-top:8px;padding:10px 24px;font-size:12px;border-radius:30px;display:flex;align-items:center;gap:8px">☰ Ver pesquisas</button>
     </div>`;
   } catch(e) {
     sub.textContent='⚠ Erro: '+e.message;
@@ -553,13 +549,14 @@ function applyFilters(){
 // ── SIDEBAR ───────────────────────────────────────────────────────────────────
 function renderSidebar(){
   const sb=document.getElementById('sidebar');
-  if(!filtered.length){sb.innerHTML='<div class="no-res">Nenhuma pesquisa encontrada</div>';return;}
+  // preserve mobile-bar header inside sidebar
+  const mobileBar=`<div class="mobile-bar"><span class="mobile-bar-title">Pesquisas 2026</span><button class="btn-drawer" onclick="closeDrawer()">✕</button></div>`;
+  if(!filtered.length){sb.innerHTML=mobileBar+'<div class="no-res">Nenhuma pesquisa encontrada</div>';return;}
   const groups={};
   filtered.forEach(p=>{const g=p.abrangencia||'Outros';if(!groups[g])groups[g]=[];groups[g].push(p);});
-  // Ordenar cada grupo da mais recente para a mais antiga
   const getDateStr=p=>(p.divulgacao||p.data_fim||p.data_inicio||'').slice(0,10);
   Object.keys(groups).forEach(g=>{groups[g].sort((a,b)=>getDateStr(b).localeCompare(getDateStr(a)));});
-  let html='';
+  let html=mobileBar;
   Object.keys(groups).sort().forEach(g=>{
     html+=`<div class="sb-group"><div class="sb-group-hd"><span>${g}</span><span class="sb-group-ct">${groups[g].length}</span></div>`;
     groups[g].forEach(p=>{
